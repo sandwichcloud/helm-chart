@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "sandwichclound.manager.fullname" . }}
+  labels:
+    app: {{ template "sandwichclound.name" . }}
+    component: {{ .Values.manager.name }}
+    chart: {{ template "sandwichclound.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  vcenterHost: {{ .Values.manager.vcenter.host | quote }}
+  vcenterPort: {{ .Values.manager.vcenter.port | quote }}
+  vcenterUsername: {{ .Values.manager.vcenter.username | quote }}
+  metadataURL: {{ .Values.manager.metadataURL | quote }}

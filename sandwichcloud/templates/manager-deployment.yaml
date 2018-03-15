@@ -1,0 +1,63 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ template "sandwichclound.manager.fullname" . }}
+  labels:
+    app: {{ template "sandwichclound.name" . }}
+    component: {{ .Values.manager.name }}
+    chart: {{ template "sandwichclound.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  revisionHistoryLimit: 3
+  replicas: {{ .Values.manager.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "sandwichclound.name" . }}
+      component: {{ .Values.manager.name }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/common-secrets: {{ include (print $.Template.BasePath "/common-secrets.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/manager-configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/manager-secrets.yaml") . | sha256sum }}
+      labels:
+        app: {{ template "sandwichclound.name" . }}
+        component: {{ .Values.manager.name }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ .Values.common.rbac.serviceAccount }}
+      terminationGracePeriodSeconds: 180  # The manager can take a while to stop
+      containers:
+        - name: {{ template "sandwichclound.name" . }}-{{ .Values.manager.name }}
+          image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"
+          imagePullPolicy: {{ .Values.manager.image.pullPolicy }}
+          env:
+            - name: VCENTER_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.manager.fullname" . }}
+                  key: vcenterHost
+            - name: VCENTER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.manager.fullname" . }}
+                  key: vcenterPort
+            - name: VCENTER_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.manager.fullname" . }}
+                  key: vcenterUsername
+            - name: VCENTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "sandwichclound.manager.fullname" . }}
+                  key: vcenterPassword
+            - name: MENU_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.manager.fullname" . }}
+                  key: metadataURL
+          resources:
+{{ toYaml .Values.resources | indent 12 }}

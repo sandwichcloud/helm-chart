@@ -1,0 +1,121 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ template "sandwichclound.api.fullname" . }}
+  labels:
+    app: {{ template "sandwichclound.name" . }}
+    component: {{ .Values.api.name }}
+    chart: {{ template "sandwichclound.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  revisionHistoryLimit: 3
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "sandwichclound.name" . }}
+      component: {{ .Values.api.name }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/common-secrets: {{ include (print $.Template.BasePath "/common-secrets.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/api-configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/api-secrets.yaml") . | sha256sum }}
+      labels:
+        app: {{ template "sandwichclound.name" . }}
+        component: {{ .Values.api.name }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ .Values.common.rbac.serviceAccount }}
+      containers:
+        - name: {{ template "sandwichclound.name" . }}-{{ .Values.api.name }}
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          env:
+            - name: AUTH_DRIVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.api.fullname" . }}
+                  key: authDrivers
+            - name: AUTH_FERNET_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "sandwichclound.fullname" . }}-common
+                  key: fernetKeys
+            - name: GITHUB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.api.fullname" . }}
+                  key: githubURL
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "sandwichclound.api.fullname" . }}
+                  key: githubClientID
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "sandwichclound.api.fullname" . }}
+                  key: githubClientSecret
+            - name: GITHUB_ORG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.api.fullname" . }}
+                  key: githubOrg
+            {{ if ne (len .Values.api.auth.github.teamRoles) 0 }}
+            - name: GITHUB_TEAM_ROLES
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.api.fullname" . }}
+                  key: githubTeamRoles
+            {{ end }}
+            - name: GITHUB_TEAM_ROLES_PREFIX
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.api.fullname" . }}
+                  key: githubTeamRolesPrefix
+            - name: DATABASE_DRIVER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.api.fullname" . }}
+                  key: databaseDriver
+            - name: DATABASE_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.api.fullname" . }}
+                  key: databaseDB
+            - name: DATABASE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.api.fullname" . }}
+                  key: databaseHost
+            - name: DATABASE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.api.fullname" . }}
+                  key: databasePort
+            - name: DATABASE_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "sandwichclound.api.fullname" . }}
+                  key: databaseUsername
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "sandwichclound.api.fullname" . }}
+                  key: databasePassword
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+{{ toYaml .Values.resources | indent 12 }}

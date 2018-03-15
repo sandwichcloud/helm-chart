@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "sandwichclound.api.fullname" . }}
+  labels:
+    app: {{ template "sandwichclound.name" . }}
+    component: {{ .Values.api.name }}
+    chart: {{ template "sandwichclound.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  authDrivers: {{ .Values.api.auth.drivers | join "," | quote }}
+  # Github Auth
+  githubURL: {{ .Values.api.auth.github.url | quote }}
+  githubOrg: {{ .Values.api.auth.github.org | quote }}
+  {{- if ne (len .Values.api.auth.github.teamRoles) 0 }}
+  githubTeamRoles: {{ .Values.api.auth.github.teamRoles | join "," | quote }}
+  {{- end }}
+  githubTeamRolesPrefix: {{ .Values.api.auth.github.teamRolesPrefix | quote }}
+  # # Database Auth
+  databaseDriver: {{ .Values.api.auth.database.driver | quote }}
+  databaseDB: {{ .Values.api.auth.database.db | quote }}
+  databaseHost: {{ .Values.api.auth.database.host | quote }}
+  databasePort: {{ .Values.api.auth.database.port | quote }}
+  databaseUsername: {{ .Values.api.auth.database.username | quote }}

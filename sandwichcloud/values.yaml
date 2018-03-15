@@ -1,0 +1,106 @@
+common:
+  rbac:
+    # Should rbac roles be created
+    create: false
+    # The name of the rbac service account
+    serviceAccount: sandwich
+
+  auth:
+    # Fernet keys for the api and metadata service
+    fernetKeys:
+      # This key should be changed in an actual deployment
+      - RJAlln1VKL9ZKoRdamTuFL4jUW-IlolMs61S2Vp35G0=
+
+api:
+  enabled: true
+  name: api
+  replicaCount: 1
+  image:
+    repository: sandwichcloud/deli-counter
+    tag: 0.0.27
+    pullPolicy: Always
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  # Ingress config for the api
+  # You probably want to enable and configure this
+  ingress:
+    enabled: false
+    annotations: {}
+    path: /
+    hosts:
+      - deli-api.local
+    tls: []
+
+  # Kubernetes resource limits
+  resources: {}
+
+  auth:
+    # Auth Drivers to enable
+    drivers:
+      - deli.counter.auth.drivers.database.driver:DatabaseAuthDriver
+
+    # Configuration for the github auth driver
+    github:
+      url: "https://api.github.com"
+      clientID: ""
+      clientSecret: ""
+      org: ""
+      teamRoles: []
+        # Sandwich Roles to Github team mapping
+        # sandwich-role:github-team
+        # - admin:my-admin-team
+      teamRolesPrefix: "sandwich-"
+
+    # Configuration for the database auth driver
+    # This defaults to sqlite which should not be
+    # used in a production deployment since it is not shared
+    # accross replicas and not persisted
+    database:
+      driver: sqlite
+      db: /tmp/sandwich.db
+      host: ""
+      username: ""
+      password: ""
+      port: 0
+
+manager:
+  enabled: true
+  name: manager
+  replicaCount: 1
+  image:
+    repository: sandwichcloud/deli-manager
+    tag: 0.0.27
+    pullPolicy: Always
+
+  # Kubernetes resource limits
+  resources: {}
+
+  # VCenter connection parameters
+  vcenter:
+    host: vcenter.example.com
+    port: 443
+    username: administrator@vsphere.local
+    password: hunter2
+
+  # The telnet URL to the metadata service
+  # The host in this URL should be reachable by your VM hosts
+  metadataURL: "telnet://127.0.0.1:31337"
+
+metadata:
+  enabled: true
+  name: metadata
+  replicaCount: 1
+  image:
+    repository: sandwichcloud/deli-menu
+    tag: 0.0.27
+    pullPolicy: Always
+
+  service:
+    # The nodeport for the service to listen on
+    nodePort: 31337
+
+  # Kubernetes resource limits
+  resources: {}

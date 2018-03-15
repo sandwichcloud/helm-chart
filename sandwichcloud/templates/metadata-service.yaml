@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "sandwichclound.metadata.fullname" . }}
+  labels:
+    app: {{ template "sandwichclound.name" . }}
+    component: {{ .Values.metadata.name }}
+    chart: {{ template "sandwichclound.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: NodePort
+  ports:
+    - port: 13370
+      nodePort: {{ .Values.metadata.service.nodePort }}
+      protocol: TCP
+  selector:
+    app: {{ template "sandwichclound.name" . }}
+    component: {{ .Values.metadata.name }}
+    release: {{ .Release.Name }}

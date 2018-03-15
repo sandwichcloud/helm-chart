@@ -1,0 +1,50 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ template "sandwichclound.metadata.fullname" . }}
+  labels:
+    app: {{ template "sandwichclound.name" . }}
+    component: {{ .Values.metadata.name }}
+    chart: {{ template "sandwichclound.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  revisionHistoryLimit: 3
+  replicas: {{ .Values.metadata.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "sandwichclound.name" . }}
+      component: {{ .Values.metadata.name }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/common-secrets: {{ include (print $.Template.BasePath "/common-secrets.yaml") . | sha256sum }}
+      labels:
+        app: {{ template "sandwichclound.name" . }}
+        component: {{ .Values.metadata.name }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ .Values.common.rbac.serviceAccount }}
+      containers:
+        - name: {{ template "sandwichclound.name" . }}-{{ .Values.metadata.name }}
+          image: "{{ .Values.metadata.image.repository }}:{{ .Values.metadata.image.tag }}"
+          imagePullPolicy: {{ .Values.metadata.image.pullPolicy }}
+          env:
+            - name: FERNET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "sandwichclound.fullname" . }}-common
+                  key: fernetKey
+          readinessProbe:  # This will make the service spam "didn't present UUID"
+            tcpSocket:
+              port: 13370
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          liveness:
+            tcpSocket:
+              port: 13370
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
