@@ -17,7 +17,7 @@ api:
   replicaCount: 1
   image:
     repository: sandwichcloud/deli-counter
-    tag: 0.0.27
+    tag: 0.0.32
     pullPolicy: Always
 
   service:
@@ -72,7 +72,7 @@ manager:
   replicaCount: 1
   image:
     repository: sandwichcloud/deli-manager
-    tag: 0.0.27
+    tag: 0.0.32
     pullPolicy: Always
 
   # Kubernetes resource limits
@@ -87,7 +87,7 @@ manager:
 
   # The telnet URL to the metadata service
   # The host in this URL should be reachable by your VM hosts
-  metadataURL: "telnet://127.0.0.1:31337"
+  metadataURL: "telnet://127.0.0.1:13370"
 
 metadata:
   enabled: true
@@ -95,12 +95,12 @@ metadata:
   replicaCount: 1
   image:
     repository: sandwichcloud/deli-menu
-    tag: 0.0.27
+    tag: 0.0.32
     pullPolicy: Always
 
   service:
-    # The nodeport for the service to listen on
-    nodePort: 31337
+    type: ClusterIP
+    port: 13370
 
   # Kubernetes resource limits
   resources: {}

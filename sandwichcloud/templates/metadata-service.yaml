@@ -9,9 +9,10 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  type: NodePort
+  type: {{ .Values.metadata.service.type }}
   ports:
-    - port: 13370
+    - port: {{ .Values.metadata.service.port }}
+      targetPort: 13370
       nodePort: {{ .Values.metadata.service.nodePort }}
       protocol: TCP
   selector:
